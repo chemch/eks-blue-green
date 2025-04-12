@@ -9,14 +9,22 @@ RUN npm install
 
 FROM node:16.3-slim
 ENV NODE_ENV production
-ARG TITLE='Blue Parrot'
-ARG IMAGE='parrot-1.jpg'
-ARG VERSION='1.0.0'
-ENV WEBSITE_TITLE $TITLE
-ENV WEBSITE_IMAGE $IMAGE
-ENV WEBSITE_VERSION $VERSION
+
+# Accept build-time arguments
+ARG WEBSITE_TITLE='Blue Parrot'
+ARG WEBSITE_IMAGE='parrot-1.jpg'
+ARG WEBSITE_VERSION='1.0.0'
+
+# Set them as environment variables inside the container
+ENV WEBSITE_TITLE=${WEBSITE_TITLE}
+ENV WEBSITE_IMAGE=${WEBSITE_IMAGE}
+ENV WEBSITE_VERSION=${WEBSITE_VERSION}
+
 WORKDIR /app
 COPY --from=build /app .
-ADD . .
+
+# Remove this to avoid overwriting app files with potentially stale source
+# ADD . .
+
 EXPOSE 3000
 CMD ["node", "server.js"]

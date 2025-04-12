@@ -1,28 +1,32 @@
-# root account id
-ACCOUNT_ID=$(aws sts get-caller-identity \
-    --query 'Account' \
-    --profile $AWS_PROFILE \
-    --output text)
-log ACCOUNT_ID $ACCOUNT_ID
-
-# add login data into /home/$USER/.docker/config.json
-aws ecr get-login-password \
-    --region $AWS_REGION \
-    --profile $AWS_PROFILE \
-    | docker login \
-    --username AWS \
-    --password-stdin $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
-
+#!/usr/bin/env bash
+set -euo pipefail
 source "$PROJECT_DIR/.ecr"
 
-log push $REPOSITORY_URI:1.0.0
-docker tag $PROJECT_NAME:1.0.0 $REPOSITORY_URI:1.0.0
-docker push $REPOSITORY_URI:1.0.0
+# Make sure Docker is logged in to ECR
+aws ecr get-login-password \
+  --region "$AWS_REGION" \
+  | docker login --username AWS \
+    --password-stdin "$REPOSITORY_URI"
 
-log push $REPOSITORY_URI:1.1.0
-docker tag $PROJECT_NAME:1.1.0 $REPOSITORY_URI:1.1.0
-docker push $REPOSITORY_URI:1.1.0
+# Define versions to push
+versions=(
+  "1.0.0 parrot-1.jpg 'Blue Parrot'"
+  "1.1.0 parrot-2.jpg 'Green Parrot'"
+  "1.2.0 parrot-3.jpg 'Red Parrot'"
+)
 
-log push $REPOSITORY_URI:1.2.0
-docker tag $PROJECT_NAME:1.2.0 $REPOSITORY_URI:1.2.0
-docker push $REPOSITORY_URI:1.2.0
+for entry in "${versions[@]}"; do
+  # Split version, image, and title
+  read -r VERSION IMAGE TITLE <<<"$entry"
+
+  info "PUSH" "$REPOSITORY_URI:$VERSION"
+
+  docker buildx build \
+    --platform linux/amd64 \
+    --build-arg WEBSITE_VERSION="$VERSION" \
+    --build-arg WEBSITE_IMAGE="$IMAGE" \
+    --build-arg WEBSITE_TITLE="$TITLE" \
+    -t "$REPOSITORY_URI:$VERSION" \
+    --push \
+    website/
+done

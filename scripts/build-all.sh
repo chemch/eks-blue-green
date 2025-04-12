@@ -1,21 +1,23 @@
-cd "$PROJECT_DIR/website"
-log BUILD $PROJECT_NAME:1.0.0
-docker image build \
-    --tag $PROJECT_NAME:1.0.0 \
-    .
+#!/usr/bin/env bash
+set -euo pipefail
 
-log BUILD $PROJECT_NAME:1.1.0
-docker image build \
-    --build-arg TITLE='Green Parrot' \
-    --build-arg IMAGE='parrot-2.jpg' \
-    --build-arg VERSION='1.1.0' \
-    --tag $PROJECT_NAME:1.1.0 \
-    .
+versions=(
+  "1.0.0 parrot-1.jpg 'Blue Parrot'"
+  "1.1.0 parrot-2.jpg 'Green Parrot'"
+  "1.2.0 parrot-3.jpg 'Red Parrot'"
+)
 
-log BUILD $PROJECT_NAME:1.2.0
-docker image build \
-    --build-arg TITLE='Red Parrot' \
-    --build-arg IMAGE='parrot-3.jpg' \
-    --build-arg VERSION='1.2.0' \
-    --tag $PROJECT_NAME:1.2.0 \
-    .
+for entry in "${versions[@]}"; do
+  read -r VERSION IMAGE TITLE <<<"$entry"
+
+  info "BUILD" "$PROJECT_NAME:$VERSION"
+
+  docker buildx build \
+    --platform linux/amd64 \
+    --build-arg WEBSITE_VERSION="$VERSION" \
+    --build-arg WEBSITE_IMAGE="$IMAGE" \
+    --build-arg WEBSITE_TITLE="$TITLE" \
+    -t "$PROJECT_NAME:$VERSION" \
+    --load \
+    website/
+done

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/opt/homebrew/bin/bash
 
 #
 # variables
@@ -6,13 +6,14 @@
 
 # AWS variables
 AWS_PROFILE=default
-AWS_REGION=eu-west-3
+AWS_REGION=us-east-1
 # project name
 PROJECT_NAME=eks-blue-green
 # the directory containing the script file
 PROJECT_DIR="$(cd "$(dirname "$0")"; pwd)"
 
 export AWS_PROFILE AWS_REGION PROJECT_NAME PROJECT_DIR
+# export AWS_REGION PROJECT_NAME PROJECT_DIR
 
 
 log()   { echo -e "\e[30;47m ${1^^} \e[0m ${@:2}"; }        # $1 uppercase background white
@@ -42,13 +43,16 @@ usage() {
 setup() {
     cd "$PROJECT_DIR/website"
     npm install
+    printf "\nstep 1 done\n"
 
     # terraform init
     cd "$PROJECT_DIR/infra"
     terraform init
+    printf "\nstep 2 done\n"
 
     cd "$PROJECT_DIR"
     bash scripts/ecr-create.sh
+    printf "\nstep 3 done\n"
     # bash scripts/user-create.sh
 }
 

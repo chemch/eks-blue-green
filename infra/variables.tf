@@ -12,10 +12,6 @@ variable "project_name" {
   default = "eks-blue-green"
 }
 
-variable "region" {
-  default = "eu-west-3"
-}
-
 variable "profile" {
   default = "default"
 }
